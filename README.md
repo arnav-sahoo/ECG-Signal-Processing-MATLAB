@@ -1,28 +1,45 @@
-# ECG Signal Processing and HRV Analysis using MATLAB
+# Biomedical ECG Signal Processing, HRV Analysis and Signal Quality Assessment using MATLAB
 
 ## Overview
-This project presents a MATLAB-based ECG signal processing and heart rate variability (HRV) analysis workflow using an open-source ECG record from the MIT-BIH Arrhythmia Database. The objective was to preprocess a raw ECG signal, remove common sources of noise and interference, detect physiologically relevant R-peaks, and extract time-domain HRV metrics such as SDNN and RMSSD.
+
+This project presents a MATLAB-based biomedical ECG signal processing and heart rate variability (HRV) analysis workflow using an open-source ECG record from the MIT-BIH Arrhythmia Database. The objective was to preprocess a raw ECG signal, remove common sources of physiological and electrical noise, detect physiologically relevant R-peaks, extract clinically meaningful time-domain HRV metrics, and evaluate the reliability of the extracted signal before interpretation.
+
+The project follows a complete three-phase biomedical signal processing pipeline:
+
+- **Phase 1:** ECG signal import, visualization, preprocessing, and filtering
+- **Phase 2:** R-peak detection, RR interval extraction, heart rate estimation, and HRV analysis
+- **Phase 3:** Engineering-oriented ECG Quality Assessment using heuristic signal validation metrics
+
+Unlike a conventional HRV analysis workflow that reports physiological metrics directly, this project introduces an additional ECG Quality Assessment stage that evaluates signal reliability using RR interval plausibility, beat-to-beat stability, physiological heart-rate validation, and peak detection consistency before interpreting downstream HRV measurements.
 
 The project combines:
+
 - ECG signal preprocessing
-- frequency-domain inspection
+- Frequency-domain inspection
+- Digital filter design and validation
 - R-peak detection
 - RR interval extraction
-- heart rate estimation
-- time-domain HRV analysis
+- Heart rate estimation
+- Time-domain HRV analysis (SDNN and RMSSD)
+- ECG quality assessment
+- Signal reliability scoring using engineering heuristics
+
+The overall workflow demonstrates how signal preprocessing, feature extraction, physiological validation, and engineering-based quality assessment can be integrated into a single biomedical signal processing pipeline using MATLAB.
 
 
 
 ## Objective
 The main goals of this project were to:
 
-- import and visualize a raw ECG record in MATLAB
+- import and visualize a raw ECG record in MATLAB from the MIT-BIH Arrhythmia Database
 - preprocess the ECG signal using filtering techniques
 - remove baseline wander, high-frequency noise, and power-line interference
+- design an ECG preprocessing pipeline to suppress common physiological and electrical noise
 - preserve ECG morphology while improving signal quality
 - detect R-peaks automatically
 - compute RR intervals and heart rate
 - perform time-domain HRV analysis using SDNN and RMSSD
+- Assess ECG signal reliability using an engineering-based ECG Quality Assessment framework before interpreting HRV metrics
 
 
 
@@ -61,7 +78,18 @@ The raw ECG data was first downloaded from PhysioNet / MIT-BIH, converted into a
    - **SDNN**: Standard Deviation of Normal-to-Normal Intervals
    - **RMSSD**: Root Mean Square of Successive Differences
 
-
+### Phase 3: ECG Quality Assessment
+1. Computed RR intervals from detected R-peaks
+2. Checked for physiologically implausible RR intervals
+3. Evaluated beat-to-beat RR stability
+4. Estimated average heart rate
+5. Assessed peak detection consistency using the RR coefficient of variation
+6. Combined heuristic quality metrics into a cumulative ECG Quality Score
+7. Classified recordings as:
+• Good Quality
+• Moderate Quality
+• Low Confidence
+8. Generated an engineering-oriented quality summary before downstream HRV interpretation
 
 ## ECG Preprocessing Pipeline
 The ECG preprocessing pipeline consisted of:
@@ -112,6 +140,41 @@ Time-domain HRV analysis on the filtered ECG yielded:
 - **RMSSD = 73.9 ms**
 - **Average Heart Rate = 73.9 BPM**
 
+## ECG Quality Assessment
+
+Following HRV analysis, an engineering quality assessment layer was implemented to evaluate whether the detected ECG signal was sufficiently reliable for downstream physiological interpretation.
+Instead of attempting clinical diagnosis, this stage estimates signal reliability using a series of heuristic quality indicators derived from the detected RR intervals.
+
+The assessment combines four complementary metrics.
+
+### RR Interval Plausibility
+RR intervals shorter than 0.3 s or longer than 2.0 s are considered physiologically implausible and may indicate missed or false R-peak detections.
+
+### Beat-to-Beat Stability
+Large differences (>200 ms) between consecutive RR intervals are treated as potential detector instability or residual signal corruption.
+
+### Average Heart Rate Validation
+The estimated heart rate is compared against a heuristic physiological range of 40–180 BPM.
+Values outside this range contribute additional penalty points to the overall quality score.
+
+### Peak Detection Consistency
+The RR Coefficient of Variation (CV) is computed to estimate detector consistency.
+Unlike the previous quality metrics, elevated RR variability contributes only a minor penalty because higher RR variability may naturally occur in healthy individuals.
+
+The cumulative heuristic score is converted into one of three engineering confidence levels:
+- Good Quality
+- Moderate Quality
+- Low Confidence
+
+### ECG Quality Assessment Results
+
+- Bad RR Intervals: 0.00%
+- Large RR Jumps: 2.25%
+- RR Coefficient of Variation: 0.074
+- Average Heart Rate: 75.24 BPM
+- Quality Score: 0
+- Quality Label: Good Quality
+
 ### Interpretation
 The average heart rate of 73.9 BPM is consistent with a normal resting rhythm for this ECG record.
 
@@ -120,6 +183,8 @@ An **SDNN of 59 ms** indicates a normal level of overall beat-to-beat variabilit
 An **RMSSD of 73.9 ms** indicates a reasonable amount of short-term beat-to-beat variability, reflecting meaningful variation in consecutive RR intervals and demonstrating that the extracted ECG features capture physiological information beyond average heart rate alone.
 
 > Note: These HRV values are interpreted only as signal-analysis results for this dataset and are not intended as a clinical diagnosis.
+
+The ECG quality assessment further indicated that the detected R-peaks were highly reliable. No physiologically implausible RR intervals were identified, beat-to-beat stability remained high, and the estimated heart rate fell within the expected physiological range. The resulting quality score of 0 classified the recording as Good Quality, providing additional confidence in the downstream HRV analysis.
 
 ---
 
@@ -140,12 +205,25 @@ Contains:
 - SDNN and RMSSD calculation
 - RR interval tachogram and histogram generation
 
+### `scripts/Phase3_ECG_Quality_Assessment.m`
+Contains:
+- RR interval plausibility assessment
+- Beat-to-beat RR stability analysis
+- Average heart-rate validation
+- RR Coefficient of Variation (CV) calculation
+- ECG quality scoring
+- ECG quality classification
+- ECG quality summary generation
+
 ---
 
 ## MATLAB Documentation
 
 ### `docs/ECG_Filtering_Workflow.mldatx`  
 MATLAB Signal Analyzer workflow file containing the ECG preprocessing pipeline, intermediate filtering stages, and figure generation workflow.
+
+### `docs/ECG_Quality_Assessment_Workflow.mlx`
+MATLAB Live Script documenting the complete ECG Quality Assessment workflow, including RR interval plausibility checks, beat-to-beat stability analysis, heart rate validation, RR coefficient of variation analysis, heuristic quality scoring, and engineering interpretation of signal reliability.
 
 ---
 
@@ -157,7 +235,8 @@ ECG-Signal-Processing-and-HRV-Analysis-MATLAB/
 ├── README.md
 ├── scripts/
 │   ├── Day1_Raw_ECG.m
-│   └── ECG_HRV_Analysis.m
+│   ├── ECG_HRV_Analysis.m
+│   └── Phase3_ECG_Quality_Assessment.m
 │
 ├── data/
 │   ├── ecg100.csv
@@ -185,7 +264,8 @@ ECG-Signal-Processing-and-HRV-Analysis-MATLAB/
 │       └── 09_raw_vs_final_filtered_comparison.png
 │
 └── docs/
-    └── ECG_Filtering_Workflow.mldatx
+    ├── ECG_Filtering_Workflow.mldatx
+    └── ECG_Quality_Assessment_Workflow.mldatx
 ```
   
 ---
@@ -260,10 +340,13 @@ The HRV interpretation used in this project was informed by commonly cited stand
 ---
 
 ## Future Improvements
-Possible next extensions of this project include:
 
-- frequency-domain HRV analysis (LF/HF power)
-- implementing a dedicated QRS detection algorithm instead of relying only on `findpeaks`
-- comparing HRV features across multiple MIT-BIH records
-- automated ECG denoising and arrhythmia-oriented feature extraction
-- integration of ECG analytics into a real-time biomedical monitoring dashboard
+Potential future extensions include:
+
+- Frequency-domain HRV analysis (LF/HF power)
+- Pan-Tompkins or wavelet-based QRS detection
+- Multi-record validation using additional MIT-BIH datasets
+- Signal Quality Index (SQI) implementation based on published literature
+- Arrhythmia feature extraction and beat classification
+- Machine learning-based ECG quality prediction
+- Integration with a real-time biomedical monitoring dashboard
